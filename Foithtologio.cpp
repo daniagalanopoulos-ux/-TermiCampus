@@ -12,7 +12,7 @@ using namespace std;
 
 Foithtologio::Foithtologio() {}
 
-void Foithtologio::sendEmailsToStudents() const 
+void Foithtologio::sendEmailsToStudents() const  
 {
     cout << "Αποστολή email σε φοιτητές" << endl;
     for (Person* p : members) {
@@ -236,3 +236,29 @@ void Foithtologio::loadFromCSV()
     }
     fCourse.close();
 }
+
+    void Foithtologio::printAllMembers() const
+    {
+        cout << "ΚΑΘΗΓΗΤΕΣ" << endl;
+        int countP=0;
+        for (Person* p : members) {
+            Professor* profPtr=dynamic_cast<Professor*>(p);
+            if (profPtr!=nullptr) {
+                cout << *profPtr <<endl;
+                countP++;
+            }
+        }
+        if (countP==0) cout << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές";
+
+        cout << "ΦΟΙΤΗΤΕΣ" << endl;
+        int countS=0;
+        for (Person* p : members) {
+            Student* studentPtr=dynamic_cast<Student*>(p);
+            if (studentPtr!=nullptr) {
+                cout << *studentPtr << endl;
+                countS++;
+            }
+        }
+        if (countS==0) cout << "Δεν έχουν βρεθέι καταχωρημένοι φοιτητές";
+    }
+
