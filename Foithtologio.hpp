@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class Foithtologio
+class Foithtologio 
 {
     private:
         vector<Person*> members;
@@ -33,6 +33,8 @@ class Foithtologio
 
         void saveToCSV() const;
         void loadFromCSV(); 
+
+        void printAllMembers() const;
 };
 
 #endif 

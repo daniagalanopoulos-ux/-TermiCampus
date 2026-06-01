@@ -58,21 +58,26 @@ int main()
     noecho(); // κλέινει η ηχώ των πλήκτρων
     cbreak();
     keypad(stdscr, TRUE); // επιτρέπεται η χρήση ειδικών πλήκτρω
-    curs_set(0); // κρύβεται ο κέρσορας
+    curs_set(0); // κρύβεται ο κέρσορας 
 
     int startx=0, starty=0;
     string choices[] = 
     {
         "1. Δημιουργία / Φόρτωση Δοκιμαστικών Τελεστών",
-        "2. Αποστολή email σε καθηγητές",
-        "3. Αποστολή email σε φοιτητές",
-        "4. Αποθήκευση σε CSV αρχείο",
-        "5. Φόρτωση από CSV αρχείο",
-        "6. Έξοδος",
+        "2. Εισαγωγή νέου φοιτητή",
+        "3. Εισαγωγή νέου καθηγητή",
+        "4. Δημιουργία μαθήματος",
+        "5. Αναζήτηση μέλους με βάση το ΑΜ",
+        "6. Αποστολή email σε καθηγητές",
+        "7. Αποστολή email σε φοιτητές",
+        "8. Αποθήκευση σε CSV αρχείο",
+        "9. Φόρτωση από CSV αρχείο",
+        "10. Προβολή όλων φοιτητών/καθηγητών"
+        "11. Έξοδος",
     } ;
     int new_choices=sizeof(choices)/sizeof(string); // υπολογίζεται το πλήθος των επιλογών 
 
-    WINDOW *menu_win=newwin(15, 60, starty, startx); // δημιουργείται παράθυρο
+    WINDOW *menu_win=newwin(25, 70, starty, startx); // δημιουργείται παράθυρο
     keypad(menu_win, TRUE);
 
     int choice=0;
@@ -119,20 +124,116 @@ int main()
                             }
                             break;
                         case 2:
+                        {
+                            string id, name, gender;
+                            unsigned int semester;
+
+                            cout << "Εισαγωγή νέου φοιτητή";
+                            cout << "Δώστε ΑΜ: ";
+                            cin >> id;
+                            cin.ignore();
+
+                            cout "Δώστε ονοματεπώνυμο: ";
+                            getline(cin, name);
+
+                            cout << "Δώστε φύλο: ";
+                            getline(cin, gender);
+
+                            cout << "Δώστε εξάμηνο: ";
+                            cin >> semester;
+
+                            uni addMember(new Student(id.c_str(), name, gender, semester));
+                            cout << "\nΟ/Η φοιτητής/φοιτήτρια προστέθηκε επιτυχωώς στο σύστημα";
+                        } break;
+                        case 3:
+                        {
+                            string id, name, gender, specialty;
+
+                            cout << "Εισαγωγή νέου καθηγητή";
+                            cout << "Δώστε ΑΜ: ";
+                            cin >> id;
+                            cin.ignore();
+
+                            cout "Δώστε ονοματεπώνυμο: ";
+                            getline(cin, name);
+
+                            cout << "Δώστε φύλο: ";
+                            getline(cin, gender);
+
+                            cout << "Δώστε ειδικότητα: ";
+                            getline(cin, specialty);
+
+                            uni addMember(new Professor(id.c_str(), name, gender, specialty));
+                            cout << "\nΟ/Η καθηγητής/καθηγήτρια προστέθηκε επιτυχωώς στο σύστημα";
+                        } break;
+                        case 4:
+                        {
+                            string code, desc, profId;
+                            unsigned int semester;
+
+                            cout << "Δημιουργία νέου μαθήματος";
+                            cout << "Δώστε κωδικό μαθήματος: ";
+                            cin >> code;
+                            cin.ignore();
+                            cout << "Δώστε τίτλο/περιγραφή μαθήματος";
+                            getline(cin, desc);
+                            cout << " Δώστε εξάμηνο διδασκαλίας: ";
+                            cin >> semester;
+                            cout << "Δώστε ΑΜ υπεύθυνου καθηγητή: ";
+                            cin >> profId;
+
+                            Professor* assignedProf=nullptr;
+                            if ("profId=='None") {
+                                Person* p=uni.findMember(profId.c_str());
+                                assignedProf=dynamic_cast<Professor*>(p);
+                                if (assignedProf='None') {
+                                    cout << "Ο καθηγτής με ΑΜ" << profId << "δεν βρέθηκε";
+                                }
+                            }
+                            Course* newCourse=new Course(code, desc, semester, aasignedProf);
+                            if (assignedProf!=nullptr) {
+                                assignedProf->assignCourse(newCourse);
+                            }
+                            uni.addCourse(new Course);
+                            cout << "Το μάθημα προστέθηκε επιτυχώς";
+                        } break;
+                        case 5:
+                        {
+                            string searchId;
+                            cout << "Αναζήτηση μέλους";
+                            cout << "Δώστε ΑΜ μέλους: ";
+                            cin >> serachId;
+
+                            Person* p=uni.findMember(searchId.c_str());
+                            if (p!=nullptr) {
+                                cout << "Το μέλος με ΑΜ" << searchId << "βρέθηκε. \nΣτοιχεία: ";
+                                if (Student* s=dynamic_cast<Student*>(p)) {
+                                    cout << *s << endl;
+                                } else if (Professor* prof=dynamic_cast<Professor*>(p)) {
+                                    cout << *prof << endl;
+                                }
+                            } else {
+                                cout << "Δεν βρέθηκε μέλος με ΑΜ" << searchId << endl;
+                            }
+                        } break;
+                        case 6:
                             uni.sendEmailsToProfessors();
                             break;
-                        case 3:
+                        case 7:
                             uni.sendEmailsToStudents();
                             break;
-                        case 4:
+                        case 8:
                             uni.saveToCSV();
                             cout << "Τα αρχεία δημιουργήθηκαν επιτυχώς";
                             break;
-                        case 5:
+                        case 9:
                             uni.loadFromCSV();
                             cout << "Τα δεδομένα φορτώθηκαν επιτυχώς";
                             break;
-                        case 6:
+                        case 10: 
+                            uni.printAllMembers();
+                            break;
+                        case 11:
                             cout << "Κλείσιμο εφαρμογής";
                             running=false;
                             break;
