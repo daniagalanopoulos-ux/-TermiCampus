@@ -2,6 +2,7 @@
 #define STUDENT_HPP
 
 #include "Person.hpp"
+#include "Record.hpp"
 #include <vector>
 #include <iostream>
 
@@ -13,7 +14,7 @@ class Student : public Person
 {
     private:
         unsigned int semester;
-        vector<Course*> enrolledCourses;
+        vector<Record> enrolledCourses; // το αντικείμενο περιέχει και το μάθημα και τον βαθμό του
     
     public:
         Student(const char* studentId, const string& studentName);
@@ -30,6 +31,9 @@ class Student : public Person
         Student &operator-();
 
         void enrollCourse(Course* c);
+        void assignGrade(Course* c, float grade);
+
+        void print(ostream& os) const;
 }; 
 
 ostream& operator<<(ostream& os, const Student& student);
