@@ -1,7 +1,9 @@
 #include "Student.hpp"
 #include "Course.hpp"
+#include "Record.hpp"
 #include <iostream>
 #include <cstring>
+#include <stdexcept>
 
 using namespace std;
 
@@ -61,13 +63,27 @@ Student& Student::operator-()
     return *this;
 }
 
-ostream& operator<<(ostream& os, const Student& student) {
-    string studentName=student.getName();
-    const char* c_name=studentName.c_str();
-    size_t name_length=strlen(c_name);
+void Student::print(ostream& os) const{
+    string studentName=getName();;
+    size_t name_length=studentName.length();
 
-    os << "AM: " << student.getId() << " | Ονοματεπώνυμο: " << studentName << " (" << name_length << ") " << "| Φύλο: " << student.getGender() << " | Εξάμηνο: " << student.getSemester();
-    
+    os << "AM: " << getId() << " | Ονοματεπώνυμο: " << studentName << " (" << name_length << ") " << "| Φύλο: " << getGender() << " | Εξάμηνο: " << getSemester();
+    if (enrolledCourses.empty()) {
+        os << "Καμία εγγραφή";
+    } else {
+        for (const auto& record : enrolledCourses) {
+            os << "\n - " << record.getCourse()->getDescription();
+            if (record.hasGrade()) {
+                os << " | Βαθμός: " << record.getGrade();
+            } else {
+                os << " | Βαθμός: - ";
+            } 
+        }
+    }
+}
+
+ostream& operator<<(ostream& os, const Student& student) {
+    student.print(os);
     return os;
 }
 
@@ -75,6 +91,18 @@ ostream& operator<<(ostream& os, const Student& student) {
 void Student::enrollCourse(Course*c)
 {
     if (c!=nullptr){
-        enrolledCourses.push_back(c);
+        enrolledCourses.push_back(Record(c));
     }
+}
+
+void Student::assignGrade(Course* c, float grade)
+{
+    for (size_t i=0; i<enrolledCourses.size(); i++)
+    {
+        if (enrolledCourses[i].getCourse()==c) {
+            enrolledCourses[i].setGrade(grade);
+            return;
+        }
+    }
+    throw runtime_error("Σφάλμα: ο φοιτητής δεν είναι εγγεγραμμένος στο συγκεκριμένο μάθημα.");
 }
