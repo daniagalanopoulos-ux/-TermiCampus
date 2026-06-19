@@ -73,7 +73,8 @@ int main()
         "8. Αποθήκευση σε CSV αρχείο",
         "9. Φόρτωση από CSV αρχείο",
         "10. Προβολή όλων φοιτητών/καθηγητών"
-        "11. Έξοδος",
+        "11. Καταχώρηση βαθμολογίας"
+        "12. Έξοδος",
     } ;
     int new_choices=sizeof(choices)/sizeof(string); // υπολογίζεται το πλήθος των επιλογών 
 
@@ -234,6 +235,45 @@ int main()
                             uni.printAllMembers();
                             break;
                         case 11:
+                            string studentId, courseCode;
+                            float grade;
+
+                            cout << "Καταχώρηση βαθμολογίας";
+                            cout << "Δώστε ΑΜ φοιτητή: ";
+                            cin >> studentId;
+
+                            Person* p=uni.findMember(studentId.c_str());
+                            Student* studentPtr=dynamic_cast<Student*>(p);
+                            if (studentPtr==nullptr) {
+                                cout << "Σφάλμα: ο φοιτητής δεν βρέθηκε";
+                                break;
+                            }
+                            cout << "Δώστε κωδικό μαθήματος";
+                            cin >> courseCode;
+                            Course* coursePtr=uni.findCourse(courseCode);
+                            if (coursePtr==nullptr) {
+                                cout << "Σφάλμα: το μάθημα δεν βρέθηκε";
+                                break;
+                            }
+
+                            cout << "Δώστε βαθμό (0.0-10.0)";
+                            cin >> grade;
+
+                            try {
+                                bool isEnrolled=false;
+                                for (const auto& r : studentPtr->getEnrolledCourses()) {
+                                    if (r.getCourse()==coursePtr) {isEnrolled==true; break;}
+                                }
+                                if (!isEnrolled) {
+                                    studentPtr->enrollCourse(coursePtr);
+                                }
+
+                                studentPtr->assignGrade(coursePtr, grade);
+                                cout << "Η βαθμολογία καταχωρήθηκε επιτυχώς";
+                            } catch (const exception& e) {
+                                cout << "Σφάλμα: " << e.what() << endl;
+                            }
+                        case 12:
                             cout << "Κλείσιμο εφαρμογής";
                             running=false;
                             break;
