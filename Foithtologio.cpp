@@ -164,6 +164,16 @@ void Foithtologio::saveToCSV() const
     }
     fStud.close();
     fProf.close();
+
+    ofstream fGrades("Grades.csv");
+    for (Person* p : members) {
+        Student* s=dynamic_cast<Student*>(p);
+        if (s!=nullptr) {
+            for (const auto& record : s->getEnrolledCourses()) {
+                fGrades << s->getId() << "," << record.getCourse()->getCode() << record.getGrade() << "\n" ;
+            }
+        }
+    }
     fCourse.close();
 }
 
@@ -235,30 +245,51 @@ void Foithtologio::loadFromCSV()
         addCourse(new Course(code, description, semester, assignedProf));
     }
     fCourse.close();
+
+    ifstream fGrades("Gardes.csv");
+    if (fGrades.is_open()) {
+        while (getline(fGrades, line)) {
+            stringstream ss(line);
+            string studId, courseCode, gradeStr;
+
+            getline(ss, studId, ',');
+            getline(ss, courseCode, ',');
+            getline(ss, gradeStr, ',');
+
+            Person* p=findMember(studId.c_str());
+            Student* s=dynamic_cast<Student*>(p);
+            Course* c=findCourse(courseCode);
+
+            if (s!=nullptr && c!=nullptr) {
+                s->enrollCourse(c);
+                s->assignGrade(c, stof(gradeStr));
+            }
+        }
+    }
+    fGrades.close();
 }
 
-    void Foithtologio::printAllMembers() const
-    {
-        cout << "ΚΑΘΗΓΗΤΕΣ" << endl;
-        int countP=0;
-        for (Person* p : members) {
-            Professor* profPtr=dynamic_cast<Professor*>(p);
-            if (profPtr!=nullptr) {
-                cout << *profPtr <<endl;
-                countP++;
-            }
+void Foithtologio::printAllMembers() const
+{
+    cout << "ΚΑΘΗΓΗΤΕΣ" << endl;
+    int countP=0;
+    for (Person* p : members) {
+        Professor* profPtr=dynamic_cast<Professor*>(p);
+        if (profPtr!=nullptr) {
+            cout << *profPtr <<endl;
+            countP++;
         }
-        if (countP==0) cout << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές";
-
-        cout << "ΦΟΙΤΗΤΕΣ" << endl;
-        int countS=0;
-        for (Person* p : members) {
-            Student* studentPtr=dynamic_cast<Student*>(p);
-            if (studentPtr!=nullptr) {
-                cout << *studentPtr << endl;
-                countS++;
-            }
-        }
-        if (countS==0) cout << "Δεν έχουν βρεθέι καταχωρημένοι φοιτητές";
     }
+    if (countP==0) cout << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές";
 
+    cout << "ΦΟΙΤΗΤΕΣ" << endl;
+    int countS=0;
+    for (Person* p : members) {
+        Student* studentPtr=dynamic_cast<Student*>(p);
+        if (studentPtr!=nullptr) {
+            cout << *studentPtr << endl;
+            countS++;
+        }
+    }
+    if (countS==0) cout << "Δεν έχουν βρεθέι καταχωρημένοι φοιτητές";
+}
