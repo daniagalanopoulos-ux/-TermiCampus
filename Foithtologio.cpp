@@ -237,7 +237,7 @@ void Foithtologio::loadFromCSV()
     fCourse.close();
 }
 
-    void Foithtologio::printAllMembers() const
+void Foithtologio::printAllMembers() const
     {
         cout << "ΚΑΘΗΓΗΤΕΣ" << endl;
         int countP=0;
