@@ -6,8 +6,6 @@
 #include "Person.hpp"
 #include "Course.hpp"
 
-using namespace std;
-
 class Foithtologio 
 {
     private:
@@ -28,13 +26,13 @@ class Foithtologio
         void removeCourse(const string code);
         Course* findCourse(const string& code) const;
 
-        void sendEmailsToStudents() const;
-        void sendEmailsToProfessors() const;
+        void sendEmailsToStudents(std::ostream& os) const;
+        void sendEmailsToProfessors(std::ostream& os) const;
 
         void saveToCSV() const;
         void loadFromCSV(); 
 
-        void printAllMembers() const;
+        void printAllMembers(std::ostream& os) const;
 };
 
 #endif 
