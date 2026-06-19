@@ -12,25 +12,25 @@ using namespace std;
 
 Foithtologio::Foithtologio() {}
 
-void Foithtologio::sendEmailsToStudents() const  
+void Foithtologio::sendEmailsToStudents(ostream& os) const  
 {
-    cout << "Αποστολή email σε φοιτητές" << endl;
+    os << "Αποστολή email σε φοιτητές" << endl;
     for (Person* p : members) {
         Student* studentPtr = dynamic_cast<Student*>(p);
         
         if (studentPtr != nullptr) {
-            cout << "Στάλθηκε ενημερωτικό μήνυμα στον/στην φοιτητή/φοιτήτρια: " << studentPtr->getName() << " (ΑΜ: " << studentPtr->getId() << ")" << " | Θέμα: Ενημέρωση Εξαμήνου" << " | Κείμενο: Βρίσκεστε στο " << studentPtr->getSemester() << "ο εξάμηνο."<< endl;
+            os << "Στάλθηκε ενημερωτικό μήνυμα στον/στην φοιτητή/φοιτήτρια: " << studentPtr->getName() << " (ΑΜ: " << studentPtr->getId() << ")" << " | Θέμα: Ενημέρωση Εξαμήνου" << " | Κείμενο: Βρίσκεστε στο " << studentPtr->getSemester() << "ο εξάμηνο."<< "\n";
         }
     }
 }
 
-void Foithtologio::sendEmailsToProfessors() const
+void Foithtologio::sendEmailsToProfessors(ostream& os) const
 {
-    cout << "Aποστολή email σε καθηγητές/τριες: " << endl;
+    os << "Aποστολή email σε καθηγητές/τριες: " << endl;
     for (Person* p : members) {
         Professor* profPtr=dynamic_cast<Professor*>(p);
         if (profPtr!=nullptr) {
-            cout << "Στάλθηκε ενημερωτικό μήνυμα στον/στην καθηγητή/καθηγήτρια" << profPtr->getName() << " (Ειδικότητα: " << profPtr->getSpecialty() << ")"<< endl;
+            os << "Στάλθηκε ενημερωτικό μήνυμα στον/στην καθηγητή/καθηγήτρια" << profPtr->getName() << " (Ειδικότητα: " << profPtr->getSpecialty() << ")"<< "\n";
         }
     }
 }
@@ -170,7 +170,7 @@ void Foithtologio::saveToCSV() const
         Student* s=dynamic_cast<Student*>(p);
         if (s!=nullptr) {
             for (const auto& record : s->getEnrolledCourses()) {
-                fGrades << s->getId() << "," << record.getCourse()->getCode() << record.getGrade() << "\n" ;
+                fGrades << s->getId() << "," << record.getCourse()->getCode() << "," << record.getGrade() << "\n" ;
             }
         }
     }
@@ -246,7 +246,7 @@ void Foithtologio::loadFromCSV()
     }
     fCourse.close();
 
-    ifstream fGrades("Gardes.csv");
+    ifstream fGrades("Grades.csv");
     if (fGrades.is_open()) {
         while (getline(fGrades, line)) {
             stringstream ss(line);
@@ -269,27 +269,27 @@ void Foithtologio::loadFromCSV()
     fGrades.close();
 }
 
-void Foithtologio::printAllMembers() const
+void Foithtologio::printAllMembers(ostream& os) const
 {
-    cout << "ΚΑΘΗΓΗΤΕΣ" << endl;
+    os << "ΚΑΘΗΓΗΤΕΣ" << endl;
     int countP=0;
     for (Person* p : members) {
         Professor* profPtr=dynamic_cast<Professor*>(p);
         if (profPtr!=nullptr) {
-            cout << *profPtr <<endl;
+            os << *profPtr <<endl;
             countP++;
         }
     }
     if (countP==0) cout << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές";
 
-    cout << "ΦΟΙΤΗΤΕΣ" << endl;
+    os << "ΦΟΙΤΗΤΕΣ" << endl;
     int countS=0;
     for (Person* p : members) {
         Student* studentPtr=dynamic_cast<Student*>(p);
         if (studentPtr!=nullptr) {
-            cout << *studentPtr << endl;
+            os << *studentPtr << endl;
             countS++;
         }
     }
-    if (countS==0) cout << "Δεν έχουν βρεθέι καταχωρημένοι φοιτητές";
+    if (countS==0) os << "Δεν έχουν βρεθέι καταχωρημένοι φοιτητές";
 }

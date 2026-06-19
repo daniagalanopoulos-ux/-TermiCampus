@@ -8,24 +8,77 @@
 #include <locale.h>
 #include <string>
 #include <exception>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
-void suspend_ncurses()
-{
-    def_prog_mode(); // αποθήκευση της τρέχουσας κατάστασης του τερματικού
-    endwin(); // αναστολή ncurses και επαναφορά τερματικού
-    cout << "\n===============================================\n";
+string get_string_ncurses(WINDOW* win, int y, int x, const string& prompt) {
+    mvwprintw(win, y, x, "%s", prompt.c_str());
+    echo();
+
+    string input(255, '\0');
+
+    wgetnstr(win, &input[0], 255);
+
+    noecho();
+    return string(input.c_str());
 }
 
-void resume_ncurses() 
-{
-    cout << "\nΠατήστε Enter για επιστροφή στο μενού";
-    cin.clear(); // καθαρίζει τυχόν περιπτώσεις σφάλματος
-    cin.ignore(10000, '\n'); // αγνοεί και "διαγράφει" οτιδήποτε έχει μείνει στο buffer 
-    cin.get(); // σταματάει το πρόγραμμα
-    reset_prog_mode(); // επαναφορά του ncurses         
-    refresh(); // ανανέωση οθόνης
+int get_int_ncurses(WINDOW* win, int y, int x, const string& prompt) {
+    string s=get_string_ncurses(win, y, x, prompt);
+    try { return stoi(s); } catch(...) { return 0; }
+}
+
+float get_float_ncurses(WINDOW* win, int y, int x, const string& prompt) {
+    string s=get_string_ncurses(win, y, x, prompt);
+    try { return stof(s); } catch(...) { return 0.0f; }
+}
+
+void show_text_viewer(const string& title, const string& text) {
+    int height=20;
+    int width=75;
+    int starty=(LINES-height) / 2;
+    int startx=(COLS-width) / 2;
+
+    vector<string> lines;
+    stringstream ss(text);
+    string line;
+    while (getline(ss, line)) {
+        lines.push_back(line);
+    }
+
+    int max_lines_per_page=height-4;
+    int total_pages=(lines.size() + max_lines_per_page-1) / max_lines_per_page;
+    if (total_pages==0) total_pages=1;
+
+    for (int page=0; page<total_pages; page++) {
+        WINDOW* win=newwin(height, width, starty, startx);
+        box(win, 0, 0);
+        mvwprintw(win, 0, 2, "%s Σελίδα %d/%d", title.c_str(), page+1, total_pages);
+        
+        int y=2;
+        int start_idx=page * max_lines_per_page;
+        int end_idx=start_idx + max_lines_per_page;
+        if (end_idx < lines.size()) {
+            end_idx=lines.size();
+        }
+
+        for (int i=start_idx; i<end_idx; i++) {
+            mvwprintw(win, y++, 2, "%s", lines[i].c_str());
+        }
+        if (page < total_pages-1) {
+            mvwprintw(win, height-2, 2, "Πιέστε enter για την επόμενη σελίδα");
+        } else {
+            mvwprintw(win, height-2, 2, "Τέλος κειμένου, πιέστε enter για έξοδο");
+        }
+
+        wrefresh(win);
+        wgetch(win);
+        delwin(win);
+        clear();
+        refresh();
+    }
 }
 
 void print_menu(WINDOW *menu_win, int highlight, string choices[], int new_choices) 
@@ -72,8 +125,8 @@ int main()
         "7. Αποστολή email σε φοιτητές",
         "8. Αποθήκευση σε CSV αρχείο",
         "9. Φόρτωση από CSV αρχείο",
-        "10. Προβολή όλων φοιτητών/καθηγητών"
-        "11. Καταχώρηση βαθμολογίας"
+        "10. Προβολή όλων φοιτητών/καθηγητών",
+        "11. Καταχώρηση βαθμολογίας",
         "12. Έξοδος",
     } ;
     int new_choices=sizeof(choices)/sizeof(string); // υπολογίζεται το πλήθος των επιλογών 
@@ -106,13 +159,11 @@ int main()
             case KEY_ENTER: // case 10
                 choice=highlight;
 
-                suspend_ncurses();
-
                 try { // σε περίπτωση σφάλματος να μην κρασάρει το πρόγραμμα
                     switch(choice) {
                         case 1:
-                            cout << "Δημιουργία δοκιμαστικών δεδομένων";
                             {
+                                stringstream ss;
                                 Professor* prof1=new Professor("25390001", "Γιώργος Μελετίου", "Άρρεν", "Προγραμματισμός");
                                 Student* s1=new Student("25390003", "Μαρία Παπαδοπούλου", "Θήλυ", 8);
                                 Course* c1=new Course("CS101", "Aντικειμενοστραφής Προγραμματισμός", 2, prof1);
@@ -121,169 +172,197 @@ int main()
                                 uni.addMember(prof1);
                                 uni.addMember(s1);
                                 uni.addCourse(c1);
-                                cout << "Τα μέλη προστέθηκαν επιτυχώς";
-                            }
-                            break;
+                                ss << "Δημιουργία δοκιμαστικών δεδομένων \nΤα μέλη προστέθηκαν στο σύστημα";
+                                show_text_viewer("Δοκιμαστικά δεδομένα", ss.str());
+                            } break;
                         case 2:
                         {
-                            string id, name, gender;
-                            unsigned int semester;
+                            int h=14, w=65;
+                            WINDOW* form=newwin(h, w, (LINES-h)/2, (COLS-w)/2);
+                            box(form, 0, 0);
+                            mvwprintw(form, 0, 2, "Εισαγωγή νέου φοιτητή");
 
-                            cout << "Εισαγωγή νέου φοιτητή";
-                            cout << "Δώστε ΑΜ: ";
-                            cin >> id;
-                            cin.ignore();
+                            string id=get_string_ncurses(form, 2, 2, "Δώστε ΑΜ: ");
+                            string name=get_string_ncurses(form, 4, 2, "Δώστε ονοματεπώνυμο: ");
+                            string gender=get_string_ncurses(form, 6, 2, "Δώστε φύλο: ");
+                            unsigned int semester=get_int_ncurses(form, 8, 2, "Δώστε εξάμηνο: ");
 
-                            cout "Δώστε ονοματεπώνυμο: ";
-                            getline(cin, name);
+                            uni.addMember(new Student(id.c_str(), name, gender, semester));
 
-                            cout << "Δώστε φύλο: ";
-                            getline(cin, gender);
-
-                            cout << "Δώστε εξάμηνο: ";
-                            cin >> semester;
-
-                            uni addMember(new Student(id.c_str(), name, gender, semester));
-                            cout << "\nΟ/Η φοιτητής/φοιτήτρια προστέθηκε επιτυχωώς στο σύστημα";
+                            mvwprintw(form, 11, 2, "Ο φοιτητής προστέθηκε επιττχώς");
+                            mvwprintw(form, 12, 2, "Πιέστε ένα πλήκτρο για επιστροφή");
+                            wrefresh(form);
+                            wgetch(form);
+                            delwin(form);
+                            clear();
+                            refresh();
                         } break;
                         case 3:
                         {
-                            string id, name, gender, specialty;
+                            int h=14, w=65;
+                            WINDOW* form=newwin(h, w, (LINES-h)/2, (COLS-w)/2);
+                            box(form, 0, 0);
+                            mvwprintw(form, 0, 2, "Εισαγωγή νέου καθηγητή");
 
-                            cout << "Εισαγωγή νέου καθηγητή";
-                            cout << "Δώστε ΑΜ: ";
-                            cin >> id;
-                            cin.ignore();
+                            string id=get_string_ncurses(form, 2, 2, "Δώστε ΑΜ: ");
+                            string name=get_string_ncurses(form, 4, 2, "Δώστε ονοματεπώνυμο: ");
+                            string gender=get_string_ncurses(form, 6, 2, "Δώστε φύλο: ");
+                            string specialty=get_string_ncurses(form, 8, 2, "Δώστε ειδικότητα: ");
 
-                            cout "Δώστε ονοματεπώνυμο: ";
-                            getline(cin, name);
+                            uni.addMember(new Professor(id.c_str(), name, gender, specialty));
 
-                            cout << "Δώστε φύλο: ";
-                            getline(cin, gender);
-
-                            cout << "Δώστε ειδικότητα: ";
-                            getline(cin, specialty);
-
-                            uni addMember(new Professor(id.c_str(), name, gender, specialty));
-                            cout << "\nΟ/Η καθηγητής/καθηγήτρια προστέθηκε επιτυχωώς στο σύστημα";
+                            mvwprintw(form, 11, 2, "Ο καθηγητής προστέθηκε επιττχώς");
+                            mvwprintw(form, 12, 2, "Πιέστε ένα πλήκτρο για επιστροφή");
+                            wrefresh(form);
+                            wgetch(form);
+                            delwin(form);
+                            clear();
+                            refresh();
                         } break;
                         case 4:
                         {
-                            string code, desc, profId;
-                            unsigned int semester;
+                            int h=14, w=65;
+                            WINDOW* form=newwin(h, w, (LINES-h)/2, (COLS-w)/2);
+                            box(form, 0, 0);
+                            mvwprintw(form, 0, 2, "Εισαγωγή νέου μαθηματός");
 
-                            cout << "Δημιουργία νέου μαθήματος";
-                            cout << "Δώστε κωδικό μαθήματος: ";
-                            cin >> code;
-                            cin.ignore();
-                            cout << "Δώστε τίτλο/περιγραφή μαθήματος";
-                            getline(cin, desc);
-                            cout << " Δώστε εξάμηνο διδασκαλίας: ";
-                            cin >> semester;
-                            cout << "Δώστε ΑΜ υπεύθυνου καθηγητή: ";
-                            cin >> profId;
+                            string code=get_string_ncurses(form, 2, 2, "Δώστε κωβδικό μαθήματος: ");
+                            string desc=get_string_ncurses(form, 4, 2, "Δώστε τίτλο/περιγραφή: ");
+                            unsigned int semester=get_string_ncurses(form, 6, 2, "Δώστε εξάμηνο διδασκαλίας: ");
+                            string profId=get_string_ncurses(form, 8, 2, "Δώστε ΑΜ υπεύθυνου καθηγητή: ");
 
                             Professor* assignedProf=nullptr;
-                            if ("profId=='None") {
+                            if (profId!="NONE") {
                                 Person* p=uni.findMember(profId.c_str());
-                                assignedProf=dynamic_cast<Professor*>(p);
-                                if (assignedProf='None') {
-                                    cout << "Ο καθηγτής με ΑΜ" << profId << "δεν βρέθηκε";
-                                }
+                                assignedProf=dynamic_cast<Professor*>(p)
                             }
-                            Course* newCourse=new Course(code, desc, semester, aasignedProf);
+
+                            Course* newCourse=new Course(code, desc, semester, assignedProf);
                             if (assignedProf!=nullptr) {
-                                assignedProf->assignCourse(newCourse);
+                                assignedProf->assignedCourse(newCourse);
                             }
-                            uni.addCourse(new Course);
-                            cout << "Το μάθημα προστέθηκε επιτυχώς";
+                            uni.addCourse(newCourse);
+
+                            mvwprintw(form, 11, 2, "To μάθημα προστέθηκε επιττχώς");
+                            mvwprintw(form, 12, 2, "Πιέστε ένα πλήκτρο για επιστροφή");
+                            wrefresh(form);
+                            wgetch(form);
+                            delwin(form);
+                            clear();
+                            refresh();
                         } break;
                         case 5:
                         {
-                            string searchId;
-                            cout << "Αναζήτηση μέλους";
-                            cout << "Δώστε ΑΜ μέλους: ";
-                            cin >> serachId;
-
+                            int h=8, w=65;
+                            WINDOW* form=newwin(h, w, (LINES-h)/2, (COLS-w)/2);
+                            box(form, 0, 0);
+                            mvwprintw(form, 0, 2, "Αναζήτηση μέλους");
+                            string searchId=get_string_ncurses(form, 2, 2, "Δώστε ΑΜ μέλους: ");
+                            delwin(form);
+                            
                             Person* p=uni.findMember(searchId.c_str());
+                            stringstream ss;
                             if (p!=nullptr) {
-                                cout << "Το μέλος με ΑΜ" << searchId << "βρέθηκε. \nΣτοιχεία: ";
+                                ss << "Το μέλος βρέθηκε.\nΣτοιχεία: \n";
                                 if (Student* s=dynamic_cast<Student*>(p)) {
-                                    cout << *s << endl;
+                                    ss << *s;
                                 } else if (Professor* prof=dynamic_cast<Professor*>(p)) {
-                                    cout << *prof << endl;
+                                    ss << *prof;
                                 }
                             } else {
-                                cout << "Δεν βρέθηκε μέλος με ΑΜ" << searchId << endl;
+                                ss << "Δεν βρέθηκε το μέλος με ΑΜ: " << searchId;
                             }
+                            show_text_viewer("Αποτέλεσμα αναζήτησης: ", ss.str());
                         } break;
-                        case 6:
-                            uni.sendEmailsToProfessors();
-                            break;
-                        case 7:
-                            uni.sendEmailsToStudents();
-                            break;
+                        case 6: {
+                            stringstream ss;
+                            uni.sendEmailsToProfessors(ss);
+                            show_text_viewer("Emails καθηγητών: ", ss.str());
+                        
+                        } break;
+                        case 7: {
+                            stringstream ss;
+                            uni.sendEmailsToStudents(ss);
+                            show_text_viewer("Emails φοιτητών: ", ss.str());
+                        } break;
                         case 8:
                             uni.saveToCSV();
-                            cout << "Τα αρχεία δημιουργήθηκαν επιτυχώς";
-                            break;
+                            show_text_viewer("Aποθήκευση", "τα αρχεία δημιουργήθηκαν επιτυχώς");
+                        break;
                         case 9:
                             uni.loadFromCSV();
-                            cout << "Τα δεδομένα φορτώθηκαν επιτυχώς";
-                            break;
-                        case 10: 
-                            uni.printAllMembers();
-                            break;
-                        case 11:
-                            string studentId, courseCode;
-                            float grade;
+                            show_text_viewer("Φόρτωση", "τα δεδομένα φορώθηκαν επιτυχώς από τα CSV αρχεία");
+                        break;
+                        case 10: {
+                            stringstream ss;
+                            uni.printAllMembers(ss);
+                            show_text_viewer("Προβολή μελών", ss.str());
+                        } break;
+                        case 11: {
+                            int h=12, w=65;
+                            WINDOW* form=newwin(h, w, (LINES-h)/2, (COLS-w)/2);
+                            box(form, 0, 0);
+                            mvwprintw(form, 0, 2, "Καταχώρηση βαθμολογίας");
 
-                            cout << "Καταχώρηση βαθμολογίας";
-                            cout << "Δώστε ΑΜ φοιτητή: ";
-                            cin >> studentId;
-
+                            string studentId=get_string_ncurses(form, 2, 2, "Δώστε ΑΜ φοιτητή: ");
                             Person* p=uni.findMember(studentId.c_str());
                             Student* studentPtr=dynamic_cast<Student*>(p);
+
                             if (studentPtr==nullptr) {
-                                cout << "Σφάλμα: ο φοιτητής δεν βρέθηκε";
+                                mvwprintw(form, 9, 2, "Ο φοιτητής δεν βρέθηκε");
+                                wrefresh(form);
+                                wgetch(form);
+                                delwin(form);
+                                clear();
+                                refresh();
                                 break;
                             }
-                            cout << "Δώστε κωδικό μαθήματος";
-                            cin >> courseCode;
+                            
+                            string courseCode=get_string_ncurses(form, 4, 2, "Δώστε κωδικό μαθήματος");
                             Course* coursePtr=uni.findCourse(courseCode);
+
                             if (coursePtr==nullptr) {
-                                cout << "Σφάλμα: το μάθημα δεν βρέθηκε";
+                                mvwprintw(form, 9, 2, "Το μάθημα δεν βρέθηκε");
+                                wrefresh(form);
+                                wgetch(form);
+                                delwin(form);
+                                clear();
+                                refresh();
                                 break;
                             }
 
-                            cout << "Δώστε βαθμό (0.0-10.0)";
-                            cin >> grade;
-
+                            float grade=get_float_ncurses(form, 6, 2, "Δώστε βαθμό (0.0-10.0): ");
                             try {
                                 bool isEnrolled=false;
                                 for (const auto& r : studentPtr->getEnrolledCourses()) {
-                                    if (r.getCourse()==coursePtr) {isEnrolled==true; break;}
+                                    if (r.getCourse()==coursePtr) { isEnrolled=true; break; }
                                 }
                                 if (!isEnrolled) {
                                     studentPtr->enrollCourse(coursePtr);
                                 }
-
                                 studentPtr->assignGrade(coursePtr, grade);
-                                cout << "Η βαθμολογία καταχωρήθηκε επιτυχώς";
+                                mvwprintw(form, 9, 2, "Η βαθμολογία καταχωρήθηκε επιττχώς");
                             } catch (const exception& e) {
-                                cout << "Σφάλμα: " << e.what() << endl;
+                                mvwprintw(form, 9, 2, "Σφάλμα: %s", e.what());
                             }
+
+                            wrefresh(form);
+                            wgetch(form);
+                            delwin(form);
+                            clear();
+                            refresh();
+                        } break;
                         case 12:
-                            cout << "Κλείσιμο εφαρμογής";
+                            show_text_viewer("Έξοδος", "κλείσιμο εφαρμογής");
                             running=false;
                             break;
                     }
                 } catch (const exception& e) {
-                    cout << "Υπήρξε σφάλμα. \n" << e.what() << endl;
+                    stringstream ss;
+                    ss << "Υπήρξε σφάλμα\n" << e.what();
+                    show_text_viewer("Σφάλμα", ss.str());
                 }
-                if (running) {
-                    resume_ncurses(); // αν το πρόγραμμα δεν έχει τερματίσει πατάει ο χρήστης Enter και ξαναεμφανίζεται το μενού
-                }
+            
                 break;
             default:
                 break;

@@ -22,6 +22,8 @@ void Student::setSemester(unsigned int newSemester)
     semester=newSemester;
 }
 
+const vector<Record>& Student::getEnrolledCourses() const { return enrolledCourses; }
+
 // Υπερφόρτωση τελεστών
 Student& Student::operator++()
 {
