@@ -10,6 +10,16 @@
 
 using namespace std;
 
+static string sanitizeCSVField(const string& field) {
+    string result=field;
+    for (char& ch : result) {
+        if (ch==',') {
+            ch=';';
+        }
+    }
+    return result;
+}
+
 Foithtologio::Foithtologio() {}
 
 void Foithtologio::sendEmailsToStudents(ostream& os) const  
@@ -69,8 +79,16 @@ void Foithtologio::addMember(Person *p)
 
 void Foithtologio::removeMember(const char* id)
 {
-    for (int i=0; i<members.size(); i++) {
+    for (size_t i=0; i<members.size(); i++) {
         if (strcmp(members[i]->getId(), id)==0) {
+            Professor* profPtr=dynamic_cast<Professor*>(members[i]);
+            if (profPtr!=nullptr){
+                for (Course* c : courses) {
+                    if (c->getProf() == profPtr) {
+                        c->setProf(nullptr);
+                    }
+                }
+            }
             delete members[i];
             members.erase(members.begin()+i);
             return;
@@ -100,11 +118,23 @@ void Foithtologio::addCourse(Course* c)
     courses.push_back(c);
 }
  
-void Foithtologio::removeCourse(const string code) 
+void Foithtologio::removeCourse(const string& code) 
 {
-     for (int i=0; i<courses.size(); i++) {
+    for (size_t i=0; i<courses.size(); i++) {
         if (courses[i]->getCode()==code) {
-            delete courses[i];
+            Course* c=courses[i];
+            for (Person* p : members) {
+                Student* s = dynamic_cast<Student*>(p);
+                if (s!=nullptr) {
+                    s->removeCourseReference(c);
+                    continue;
+                }
+                Professor* prof = dynamic_cast<Professor*>(p);
+                if (prof!=nullptr) {
+                    prof->removeCourseReference(c);
+                }
+            }
+            delete c;
             courses.erase(courses.begin()+i);
             return;
         }
@@ -141,12 +171,12 @@ void Foithtologio::saveToCSV() const
         
         Student* s=dynamic_cast<Student*>(p);
         if (s!=nullptr) {
-            fStud << s->getId() << "," << s->getName() << "," << s->getGender() << "," << s->getSemester() << "\n";
+            fStud << s->getId() << "," <<sanitizeCSVField(s->getName()) << "," << s->getGender() << "," << s->getSemester() << "\n";
             continue;
         }
         Professor* prof=dynamic_cast<Professor*>(p);
         if (prof!=nullptr) {
-            fProf << prof->getId() << "," << prof->getName() << "," << prof->getGender() << "," << prof->getSpecialty() << "\n";
+            fProf << prof->getId() << "," << sanitizeCSVField(prof->getName()) << "," << prof->getGender() << "," << prof->getSpecialty() << "\n";
             continue;
         }
     }
@@ -160,7 +190,7 @@ void Foithtologio::saveToCSV() const
             profId=c->getProf()->getId();
         }
 
-        fCourse << c->getCode() << "," << c->getDescription() << "," << c->getSemester() << "," << profId << "\n";
+        fCourse << c->getCode() << "," << sanitizeCSVField(c->getDescription()) << "," << c->getSemester() << "," << profId << "\n";
     }
     fStud.close();
     fProf.close();
@@ -271,23 +301,23 @@ void Foithtologio::loadFromCSV()
 
 void Foithtologio::printAllMembers(ostream& os) const
 {
-    os << "ΚΑΘΗΓΗΤΕΣ" << endl;
+    os << "ΚΑΘΗΓΗΤΕΣ" << "\n";
     int countP=0;
     for (Person* p : members) {
         Professor* profPtr=dynamic_cast<Professor*>(p);
         if (profPtr!=nullptr) {
-            os << *profPtr <<endl;
+            os << *profPtr << "\n";
             countP++;
         }
     }
-    if (countP==0) cout << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές";
+    if (countP==0) os << "Δεν έχουν βρεθεί καταχωρημένοι καθηγτητές\n";
 
-    os << "ΦΟΙΤΗΤΕΣ" << endl;
+    os << "ΦΟΙΤΗΤΕΣ" << "\n";
     int countS=0;
     for (Person* p : members) {
         Student* studentPtr=dynamic_cast<Student*>(p);
         if (studentPtr!=nullptr) {
-            os << *studentPtr << endl;
+            os << *studentPtr << "\n";
             countS++;
         }
     }

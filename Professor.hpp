@@ -23,6 +23,7 @@ class Professor : public Person
         void setSpecialty(const string& newSpecialty);
 
         void assignCourse(Course* c);
+        void removeCourseReference(Course* c);
 };
 
 ostream& operator<<(ostream& os, const Professor& prof);

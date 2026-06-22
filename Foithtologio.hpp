@@ -23,7 +23,7 @@ class Foithtologio
 
         // διαχείριση μαθημάτων
         void addCourse(Course* c);
-        void removeCourse(const string code);
+        void removeCourse(const string& code);
         Course* findCourse(const string& code) const;
 
         void sendEmailsToStudents(std::ostream& os) const;

@@ -26,5 +26,6 @@ class Person
         string getGender() const; 
 
         void setGender(const string& newGender);
+        void removeCourseReference(Course* c);
 } ; 
 #endif
