@@ -13,6 +13,8 @@
 
 using namespace std;
 
+// Διαβάζει ένα αλφαριθμητικό (string) από το χρήστη με ασφάλεια
+// Ενεργοποιεί προσωρινά την ηχώ (echo) ώστε ο χρήστης να βλέπει τι πληκτρολογεί.
 string get_string_ncurses(WINDOW* win, int y, int x, const string& prompt) {
     mvwprintw(win, y, x, "%s", prompt.c_str());
     echo();
@@ -25,19 +27,24 @@ string get_string_ncurses(WINDOW* win, int y, int x, const string& prompt) {
     return string(input.c_str());
 }
 
+// Διαβάζει κείμενο και το μετατρέπει με ασφάλεια σε ακέραιο
 int get_int_ncurses(WINDOW* win, int y, int x, const string& prompt) {
     string s=get_string_ncurses(win, y, x, prompt);
     try { return stoi(s); } catch(...) { return 0; }
 }
 
+// Διαβάζει κείμενο και το μετατρέπει με ασφάλεια σε δεκαδικό
 float get_float_ncurses(WINDOW* win, int y, int x, const string& prompt) {
     string s=get_string_ncurses(win, y, x, prompt);
     try { return stof(s); } catch(...) { return 0.0f; }
 }
 
-void show_text_viewer(const string& title, const string& text) {
-    int height=20;
-    int width=75;
+void show_text_viewer(const string& title, const string& text) { // pop-up παράθυρο
+
+    // Δυναμικός υπολογισμός μεγέθους για να χωράει πάντα στο τερματικό
+    int height=(LINES<20) ? LINES-2 : 20;
+    int width=(COLS<90) ? COLS-2 : 90;
+
     int starty=(LINES-height) / 2;
     int startx=(COLS-width) / 2;
 
@@ -47,21 +54,22 @@ void show_text_viewer(const string& title, const string& text) {
     while (getline(ss, line)) {
         lines.push_back(line);
     }
-
+    // Αποφυγή διαίρεσης με το μηδέν 
     int max_lines_per_page=height-4;
     int total_pages=(lines.size() + max_lines_per_page-1) / max_lines_per_page;
     if (total_pages==0) total_pages=1;
 
     for (int page=0; page<total_pages; page++) {
         WINDOW* win=newwin(height, width, starty, startx);
+	if (win==nullptr) break; // Αν η ncurses αποτύχει, σταματάμε
         box(win, 0, 0);
         mvwprintw(win, 0, 2, "%s Σελίδα %d/%d", title.c_str(), page+1, total_pages);
         
         int y=2;
         int start_idx=page * max_lines_per_page;
         int end_idx=start_idx + max_lines_per_page;
-        if (end_idx < lines.size()) {
-            end_idx=lines.size();
+        if (end_idx > (int)lines.size()) {
+            end_idx=(int)lines.size();
         }
 
         for (int i=start_idx; i<end_idx; i++) {
@@ -97,6 +105,7 @@ void print_menu(WINDOW *menu_win, int highlight, string choices[], int new_choic
         }
         y+=2;
     }
+
     wrefresh(menu_win); 
 }
 
@@ -157,6 +166,7 @@ int main()
                     ++highlight;
                 break;
             case KEY_ENTER: // case 10
+		case 10:
                 choice=highlight;
 
                 try { // σε περίπτωση σφάλματος να μην κρασάρει το πρόγραμμα
@@ -228,18 +238,18 @@ int main()
 
                             string code=get_string_ncurses(form, 2, 2, "Δώστε κωβδικό μαθήματος: ");
                             string desc=get_string_ncurses(form, 4, 2, "Δώστε τίτλο/περιγραφή: ");
-                            unsigned int semester=get_string_ncurses(form, 6, 2, "Δώστε εξάμηνο διδασκαλίας: ");
+                            unsigned int semester=get_int_ncurses(form, 6, 2, "Δώστε εξάμηνο διδασκαλίας: ");
                             string profId=get_string_ncurses(form, 8, 2, "Δώστε ΑΜ υπεύθυνου καθηγητή: ");
 
                             Professor* assignedProf=nullptr;
                             if (profId!="NONE") {
                                 Person* p=uni.findMember(profId.c_str());
-                                assignedProf=dynamic_cast<Professor*>(p)
+                                assignedProf=dynamic_cast<Professor*>(p);
                             }
 
                             Course* newCourse=new Course(code, desc, semester, assignedProf);
                             if (assignedProf!=nullptr) {
-                                assignedProf->assignedCourse(newCourse);
+                                assignedProf->assignCourse(newCourse);
                             }
                             uni.addCourse(newCourse);
 
@@ -289,10 +299,14 @@ int main()
                             uni.saveToCSV();
                             show_text_viewer("Aποθήκευση", "τα αρχεία δημιουργήθηκαν επιτυχώς");
                         break;
-                        case 9:
+                        case 9: {
                             uni.loadFromCSV();
-                            show_text_viewer("Φόρτωση", "τα δεδομένα φορώθηκαν επιτυχώς από τα CSV αρχεία");
-                        break;
+
+			    stringstream ss; // Δημιουργούμε ένα stream για να μαζέψουμε το κείμενο
+			    ss << "Τα δεδομένα φορτώθηκαν επιτυχώς από τα CSV αρχεία.\n";
+			    uni.printAllMembers(ss);
+                            show_text_viewer("Φόρτωση", ss.str());
+                        } break;
                         case 10: {
                             stringstream ss;
                             uni.printAllMembers(ss);

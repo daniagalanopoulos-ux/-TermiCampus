@@ -65,10 +65,30 @@ Student& Student::operator-()
     return *this;
 }
 
-void Student::print(ostream& os) const{
-    string studentName=getName();;
+void Student::print(ostream& os) const {
+    string studentName=getName();
     size_t name_length=studentName.length();
 
+    os << " AM: " << getId() << " | Ονοματεπώνυμο: " << studentName << " (" << name_length << ")\n"
+       << " └ Φύλο: " << getGender() << " | Εξάμηνο: " << getSemester();
+       
+    if (enrolledCourses.empty()) {
+        os << "\n    [ Καμία εγγραφή σε μαθήματα ]";
+    } else {
+        for (const auto& record : enrolledCourses) {
+            os << "\n    - " << record.getCourse()->getDescription();
+            if (record.hasGrade()) {
+                os << " | Βαθμός: " << record.getGrade();
+            } else {
+                os << " | Βαθμός: - ";
+            } 
+        }
+    }
+}
+
+void Student::print(ostream& os) const {
+    string studentName=getName();
+    size_t name_length=studentName.length();
     os << "AM: " << getId() << " | Ονοματεπώνυμο: " << studentName << " (" << name_length << ") " << "| Φύλο: " << getGender() << " | Εξάμηνο: " << getSemester();
     if (enrolledCourses.empty()) {
         os << "Καμία εγγραφή";
@@ -79,7 +99,7 @@ void Student::print(ostream& os) const{
                 os << " | Βαθμός: " << record.getGrade();
             } else {
                 os << " | Βαθμός: - ";
-            } 
+            }
         }
     }
 }
@@ -90,11 +110,13 @@ ostream& operator<<(ostream& os, const Student& student) {
 }
 
 // Προσθήκη μαθήματος στη λίστα του φοιτητή
-void Student::enrollCourse(Course*c)
+void Student::enrollCourse(Course* c)
 {
-    if (c!=nullptr){
-        enrolledCourses.push_back(Record(c));
+    if (c==nullptr){ return; }
+    for (const auto& record : enrolledCourses) {
+        if (record.getCourse()==c) { return; }
     }
+    enrolledCourses.push_back(Record(c));
 }
 
 void Student::assignGrade(Course* c, float grade)
@@ -107,4 +129,13 @@ void Student::assignGrade(Course* c, float grade)
         }
     }
     throw runtime_error("Σφάλμα: ο φοιτητής δεν είναι εγγεγραμμένος στο συγκεκριμένο μάθημα.");
+}
+
+void Student::removeCourseReference(Course* c) {
+    for (size_t i=0; i<enrolledCourses.size(); i++) {
+        if (enrolledCourses[i].getCourse()==c) {
+            enrolledCourses.erase(enrolledCourses.begin()+i);
+            return;
+        }
+    }
 }

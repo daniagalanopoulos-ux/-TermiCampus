@@ -20,17 +20,28 @@ void Professor::setSpecialty(const string& newSpecialty)
 
 ostream& operator<<(ostream& os, const Professor& prof) {
     string profName = prof.getName();
-    const char* c_name = profName.c_str();
-    size_t name_length = strlen(c_name);
+    size_t name_length = profName.length(); // Υπολογισμός μήκους που πρόσθεσες
 
-    os << "Κωδικός: " << prof.getId() << " | Όνομα: " << profName << " (" << name_length << ") " << "| Φύλο: " << prof.getGender() << " | Ειδικότητα: " << prof.getSpecialty();
+    os << " Κωδικός: " << prof.getId() << " | Όνομα: " << profName << " (" << name_length << ")\n"
+       << " └ Φύλο: " << prof.getGender() << " | Ειδικότητα: " << prof.getSpecialty();
     return os;
 }
 
 // Προσθήκη μαθήματος στον καθηγητή
 void Professor::assignCourse(Course *c)
 {
-    if (c!=nullptr){
-        taughtCourses.push_back(c); 
+    if (c==nullptr){ return; }
+    for (Course* taught : taughtCourses) {
+        if (taught==c) { return; }
+    }
+    taughtCourses.push_back(c);
+}
+
+void Professor::removeCourseReference(Course* c) {
+    for (size_t i=0; i<taughtCourses.size(); i++) {
+        if (taughtCourses[i]==c) {
+            taughtCourses.erase(taughtCourses.begin()+i);
+            return;
+        }
     }
 }

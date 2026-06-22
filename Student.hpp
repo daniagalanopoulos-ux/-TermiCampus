@@ -34,6 +34,9 @@ class Student : public Person
         void assignGrade(Course* c, float grade);
 
         void print(ostream& os) const;
+
+        const vector<Record>& getEnrolledCourses() const;
+        void removeCourseReference(Course* c);
 }; 
 
 ostream& operator<<(ostream& os, const Student& student);
