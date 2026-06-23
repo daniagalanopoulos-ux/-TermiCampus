@@ -4,20 +4,6 @@ A terminal-based university registry system written in **C++**, built as a semes
 
 ---
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Class Architecture](#class-architecture)
-- [Project Structure](#project-structure)
-- [Dependencies](#dependencies)
-- [Build & Run](#build--run)
-- [CSV Data Format](#csv-data-format)
-- [Menu Reference](#menu-reference)
-- [OOP Design Decisions](#oop-design-decisions)
-
----
-
 ## 📖 Overview
 
 TermiCampus is a fully object-oriented university registry application that runs entirely inside a terminal. It uses the `ncurses` library to render a navigable menu system with modal pop-up windows for data entry and output display. All registry data — students, professors, courses, and grades — is persisted to and loaded from CSV files.
