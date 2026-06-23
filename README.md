@@ -1,4 +1,4 @@
-# 🎓 TermiCampus — University Registry System
+# 🎓 TermiCampus
 
 A terminal-based university registry system written in **C++**, built as a semester assignment. TermiCampus manages students, professors, courses, and grades through a keyboard-navigable ncurses interface, with full CSV persistence across sessions.
 
